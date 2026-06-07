@@ -1,4 +1,6 @@
 import os
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 import discord
 from discord.ext import commands
 from discord import app_commands
@@ -112,10 +114,31 @@ class MCPEAsiaBot(commands.Bot):
         embed.set_footer(text="MCPE ASIA \u2022 Built for MCPE")
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-Type", "text/plain")
+        self.end_headers()
+        self.wfile.write(b"MCPE ASIA Bot is alive!")
+
+    def log_message(self, format, *args):
+        pass
+
 bot = MCPEAsiaBot()
 
 if __name__ == "__main__":
+    port = int(os.getenv("PORT", 10000))
+    server = HTTPServer(("0.0.0.0", port), HealthHandler)
+    health_thread = threading.Thread(target=server.serve_forever)
+    health_thread.start()
+    print(f"Health server running on port {port}")
+
     if TOKEN and TOKEN != "your_discord_token_here":
-        bot.run(TOKEN)
+        try:
+            bot.run(TOKEN)
+        except Exception as e:
+            print(f"Bot failed: {e}")
     else:
-        print("\u26A0\uFE0F DISCORD_TOKEN not set in .env. Update the .env file and try again.")
+        print("DISCORD_TOKEN not set. Add it in Render dashboard and redeploy.")
+
+    health_thread.join()
