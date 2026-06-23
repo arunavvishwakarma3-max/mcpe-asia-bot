@@ -79,6 +79,11 @@ class TierGroup(app_commands.Group):
         )
         await interaction.followup.send(embed=success, ephemeral=True)
 
+    @setup.error
+    async def setup_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
+        if isinstance(error, app_commands.CheckFailure):
+            await interaction.response.send_message("\u274C You need Administrator permission to use this command.", ephemeral=True)
+
     @app_commands.command(name="remove", description="Delete the tier hub panel from its channel.")
     @app_commands.checks.has_permissions(administrator=True)
     async def remove(self, interaction: discord.Interaction):
@@ -110,6 +115,11 @@ class TierGroup(app_commands.Group):
 
         embed = embeds.tier_remove_embed()
         await interaction.followup.send(embed=embed, ephemeral=True)
+
+    @remove.error
+    async def remove_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
+        if isinstance(error, app_commands.CheckFailure):
+            await interaction.response.send_message("\u274C You need Administrator permission to use this command.", ephemeral=True)
 
     @app_commands.command(name="result", description="Submit a tier evaluation result.")
     @is_tier_staff()
@@ -207,6 +217,11 @@ class TierGroup(app_commands.Group):
         embed = embeds.tier_role_embed(tier_name, role.mention)
         await interaction.followup.send(embed=embed, ephemeral=True)
 
+    @setrole.error
+    async def setrole_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
+        if isinstance(error, app_commands.CheckFailure):
+            await interaction.response.send_message("\u274C You need Administrator permission to use this command.", ephemeral=True)
+
     @app_commands.command(name="unsetrole", description="Remove a tier-to-role mapping.")
     @app_commands.checks.has_permissions(administrator=True)
     @app_commands.describe(tier_name="The tier name to unmap")
@@ -214,6 +229,11 @@ class TierGroup(app_commands.Group):
         await interaction.response.defer(ephemeral=True)
         database.remove_tier_role(interaction.guild_id, tier_name)
         await interaction.followup.send(f"\u2705 Role mapping removed for **{tier_name}**.", ephemeral=True)
+
+    @unsetrole.error
+    async def unsetrole_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
+        if isinstance(error, app_commands.CheckFailure):
+            await interaction.response.send_message("\u274C You need Administrator permission to use this command.", ephemeral=True)
 
     @app_commands.command(name="roles", description="List all tier-to-role mappings.")
     async def list_roles(self, interaction: discord.Interaction):
