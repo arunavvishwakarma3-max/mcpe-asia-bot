@@ -20,7 +20,14 @@ intents.guilds = True
 
 class MCPEAsiaBot(commands.Bot):
     def __init__(self):
-        super().__init__(command_prefix="!", intents=intents)
+        super().__init__(
+            command_prefix="!",
+            intents=intents,
+            activity=discord.Activity(
+                type=discord.ActivityType.watching,
+                name="/tier | MCPE ASIA"
+            )
+        )
 
     async def setup_hook(self):
         self.tree.add_command(tier_system.TierGroup())
@@ -41,14 +48,6 @@ class MCPEAsiaBot(commands.Bot):
     async def on_ready(self):
         database.init_db()
         print(f"Logged in as {self.user.name} ({self.user.id})")
-
-        await self.change_presence(
-            activity=discord.Activity(
-                type=discord.ActivityType.watching,
-                name="/tier | MCPE ASIA"
-            )
-        )
-
         self.add_view(views.TierGamemodeSelect())
         print("Persistent views restored.")
 
