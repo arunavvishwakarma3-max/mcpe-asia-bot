@@ -43,6 +43,22 @@ class TierGroup(app_commands.Group):
     ):
         await interaction.response.defer(ephemeral=True)
 
+        bot_member = interaction.guild.me
+        if not bot_member.guild_permissions.manage_channels:
+            await interaction.followup.send(
+                "\u274C The bot needs **Manage Channels** permission in the server to create ticket channels. "
+                "Give it that permission and try again.",
+                ephemeral=True
+            )
+            return
+        if not ticket_category.permissions_for(bot_member).manage_channels:
+            await interaction.followup.send(
+                "\u274C The bot needs **Manage Channels** permission in the selected category. "
+                "Check the category permissions and try again.",
+                ephemeral=True
+            )
+            return
+
         data = {
             "tier_channel_id": tier_channel.id,
             "tier_results_channel_id": results_channel.id,

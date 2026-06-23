@@ -66,7 +66,11 @@ class TierInfoModal(discord.ui.Modal, title="Tier Evaluation Details"):
                 name=clean_name, category=category, overwrites=overwrites
             )
         except Exception as e:
-            await interaction.followup.send(f"\u274C Failed to create ticket: {e}", ephemeral=True)
+            await interaction.followup.send(
+                f"\u274C Failed to create ticket: {e}\n\n"
+                "Make sure the bot has **Manage Channels** permission in the server and the category.",
+                ephemeral=True
+            )
             return
 
         ticket_id = database.create_tier_ticket(
