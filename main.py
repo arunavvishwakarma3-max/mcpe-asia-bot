@@ -42,6 +42,13 @@ class MCPEAsiaBot(commands.Bot):
         database.init_db()
         print(f"Logged in as {self.user.name} ({self.user.id})")
 
+        await self.change_presence(
+            activity=discord.Activity(
+                type=discord.ActivityType.watching,
+                name="/tier | MCPE ASIA"
+            )
+        )
+
         self.add_view(views.TierGamemodeSelect())
         print("Persistent views restored.")
 
