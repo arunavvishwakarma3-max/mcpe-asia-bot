@@ -24,7 +24,7 @@ class TierGroup(app_commands.Group):
         super().__init__(name="tier", description="Tier test system commands")
 
     @app_commands.command(name="setup", description="Configure the tier testing system.")
-    @app_commands.checks.has_permissions(administrator=True)
+    @app_commands.checks.has_permissions(manage_guild=True)
     @app_commands.describe(
         tier_channel="Channel for the tier lobby panel",
         results_channel="Channel for publishing tier results",
@@ -82,10 +82,10 @@ class TierGroup(app_commands.Group):
     @setup.error
     async def setup_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         if isinstance(error, app_commands.CheckFailure):
-            await interaction.response.send_message("\u274C You need Administrator permission to use this command.", ephemeral=True)
+            await interaction.response.send_message("\u274C You need Manage Server permission to use this command.", ephemeral=True)
 
     @app_commands.command(name="remove", description="Delete the tier hub panel from its channel.")
-    @app_commands.checks.has_permissions(administrator=True)
+    @app_commands.checks.has_permissions(manage_guild=True)
     async def remove(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
         cfg = database.get_guild_config(interaction.guild_id)
@@ -119,7 +119,7 @@ class TierGroup(app_commands.Group):
     @remove.error
     async def remove_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         if isinstance(error, app_commands.CheckFailure):
-            await interaction.response.send_message("\u274C You need Administrator permission to use this command.", ephemeral=True)
+            await interaction.response.send_message("\u274C You need Manage Server permission to use this command.", ephemeral=True)
 
     @app_commands.command(name="result", description="Submit a tier evaluation result.")
     @is_tier_staff()
@@ -206,7 +206,7 @@ class TierGroup(app_commands.Group):
         await interaction.followup.send(embed=embed, ephemeral=True)
 
     @app_commands.command(name="setrole", description="Map a tier name to a role (auto-assigned on evaluation).")
-    @app_commands.checks.has_permissions(administrator=True)
+    @app_commands.checks.has_permissions(manage_guild=True)
     @app_commands.describe(
         tier_name="The tier name (e.g. LT3, Iron, Gold)",
         role="The role to assign when this tier is earned"
@@ -220,10 +220,10 @@ class TierGroup(app_commands.Group):
     @setrole.error
     async def setrole_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         if isinstance(error, app_commands.CheckFailure):
-            await interaction.response.send_message("\u274C You need Administrator permission to use this command.", ephemeral=True)
+            await interaction.response.send_message("\u274C You need Manage Server permission to use this command.", ephemeral=True)
 
     @app_commands.command(name="unsetrole", description="Remove a tier-to-role mapping.")
-    @app_commands.checks.has_permissions(administrator=True)
+    @app_commands.checks.has_permissions(manage_guild=True)
     @app_commands.describe(tier_name="The tier name to unmap")
     async def unsetrole(self, interaction: discord.Interaction, tier_name: str):
         await interaction.response.defer(ephemeral=True)
@@ -233,7 +233,7 @@ class TierGroup(app_commands.Group):
     @unsetrole.error
     async def unsetrole_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         if isinstance(error, app_commands.CheckFailure):
-            await interaction.response.send_message("\u274C You need Administrator permission to use this command.", ephemeral=True)
+            await interaction.response.send_message("\u274C You need Manage Server permission to use this command.", ephemeral=True)
 
     @app_commands.command(name="roles", description="List all tier-to-role mappings.")
     async def list_roles(self, interaction: discord.Interaction):
