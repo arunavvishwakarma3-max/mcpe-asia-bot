@@ -1,5 +1,4 @@
 import sqlite3
-import os
 import json
 from contextlib import contextmanager
 
@@ -26,12 +25,15 @@ def init_db():
             tier_staff_role_id INTEGER,
             tier_tester_role_id INTEGER,
             ticket_category_id INTEGER,
-            welcome_channel_id INTEGER,
             tier_roles TEXT DEFAULT '{}'
         )
         """)
         try:
             cursor.execute("ALTER TABLE guild_config ADD COLUMN tier_roles TEXT DEFAULT '{}'")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            cursor.execute("ALTER TABLE guild_config ADD COLUMN tier_message_id INTEGER")
         except sqlite3.OperationalError:
             pass
 
@@ -42,11 +44,22 @@ def init_db():
             channel_id INTEGER,
             user_id INTEGER,
             gamemode TEXT NOT NULL,
+            ign TEXT DEFAULT '',
+            time TEXT DEFAULT '',
             status TEXT DEFAULT 'open',
             claimed_by INTEGER,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         """)
+
+        try:
+            cursor.execute("ALTER TABLE tier_tickets ADD COLUMN ign TEXT DEFAULT ''")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            cursor.execute("ALTER TABLE tier_tickets ADD COLUMN time TEXT DEFAULT ''")
+        except sqlite3.OperationalError:
+            pass
 
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS tier_results (
@@ -84,13 +97,13 @@ def save_guild_config(guild_id: int, data: dict):
             conn.execute(f"INSERT INTO guild_config ({', '.join(keys)}) VALUES ({placeholders})", vals)
         conn.commit()
 
-def create_tier_ticket(guild_id: int, channel_id: int, user_id: int, gamemode: str):
+def create_tier_ticket(guild_id: int, channel_id: int, user_id: int, gamemode: str, ign: str = "", time: str = ""):
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO tier_tickets (guild_id, channel_id, user_id, gamemode, status)
-            VALUES (?, ?, ?, ?, 'open')
-        """, (guild_id, channel_id, user_id, gamemode))
+            INSERT INTO tier_tickets (guild_id, channel_id, user_id, gamemode, ign, time, status)
+            VALUES (?, ?, ?, ?, ?, ?, 'open')
+        """, (guild_id, channel_id, user_id, gamemode, ign, time))
         conn.commit()
         return cursor.lastrowid
 

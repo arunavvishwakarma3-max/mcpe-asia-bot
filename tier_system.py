@@ -52,7 +52,17 @@ class TierGroup(app_commands.Group):
         if tester_role:
             data["tier_tester_role_id"] = tester_role.id
 
-        database.save_guild_config(interaction.guild_id, data)
+        cfg = database.get_guild_config(interaction.guild_id)
+        old_channel_id = cfg.get('tier_channel_id') if cfg else None
+        old_msg_id = cfg.get('tier_message_id') if cfg else None
+        if old_channel_id and old_msg_id:
+            old_channel = interaction.guild.get_channel(old_channel_id)
+            if old_channel:
+                try:
+                    old_msg = await old_channel.fetch_message(old_msg_id)
+                    await old_msg.delete()
+                except:
+                    pass
 
         embed = embeds.tier_hub_embed()
         view = views.TierGamemodeSelect()
@@ -61,24 +71,45 @@ class TierGroup(app_commands.Group):
         if hasattr(bot_ref, 'add_view') and callable(bot_ref.add_view):
             bot_ref.add_view(view, message_id=msg.id)
 
-        success = discord.Embed(
-            title="\u2705 Tier System Configured",
-            description=(
-                "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
-                "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
-                "The tier system is now operational.\n"
-                "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
-                "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
-                f"\n\n\uD83D\uDCCD **Lobby:** {tier_channel.mention}\n"
-                f"\uD83D\uDCCD **Results:** {results_channel.mention}\n"
-                f"\uD83D\uDCCD **Category:** {ticket_category.mention}\n"
-                f"\uD83D\uDC64 **Staff Role:** {staff_role.mention}\n"
-                f"{f'\uD83D\uDC64 **Tester Role:** {tester_role.mention}' if tester_role else ''}"
-            ),
-            color=embeds.COLOR_GREEN
+        data["tier_message_id"] = msg.id
+        database.save_guild_config(interaction.guild_id, data)
+
+        success = embeds.tiersetup_success_embed(
+            tier_channel, results_channel, ticket_category, staff_role, tester_role
         )
-        success.set_footer(text="MCPE ASIA \u2022 Tier System")
         await interaction.followup.send(embed=success, ephemeral=True)
+
+    @app_commands.command(name="remove", description="Delete the tier hub panel from its channel.")
+    @app_commands.checks.has_permissions(administrator=True)
+    async def remove(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        cfg = database.get_guild_config(interaction.guild_id)
+        if not cfg or not cfg.get('tier_channel_id'):
+            await interaction.followup.send("\u274C No tier system is configured.", ephemeral=True)
+            return
+
+        channel = interaction.guild.get_channel(cfg['tier_channel_id'])
+        msg_id = cfg.get('tier_message_id')
+
+        if channel and msg_id:
+            try:
+                msg = await channel.fetch_message(msg_id)
+                await msg.delete()
+                deleted = True
+            except:
+                pass
+
+        database.save_guild_config(interaction.guild_id, {
+            "tier_channel_id": None,
+            "tier_results_channel_id": None,
+            "ticket_category_id": None,
+            "tier_staff_role_id": None,
+            "tier_tester_role_id": None,
+            "tier_message_id": None,
+        })
+
+        embed = embeds.tier_remove_embed()
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
     @app_commands.command(name="result", description="Submit a tier evaluation result.")
     @is_tier_staff()
@@ -161,22 +192,7 @@ class TierGroup(app_commands.Group):
             await interaction.followup.send("\uD83D\uDCED No tier results recorded yet.", ephemeral=True)
             return
 
-        embed = discord.Embed(
-            title="\uD83D\uDCDC Tier Evaluation History",
-            description=(
-                "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
-                "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
-            ),
-            color=embeds.COLOR_PURPLE
-        )
-        for r in results:
-            embed.add_field(
-                name=f"{r['ign']} \u2014 {r['previous_tier']} \u2192 {r['new_tier']}",
-                value=f"\u2022 **Player:** <@{r['user_id']}> \u2022 **Evaluator:** <@{r['tester_id']}>"
-                       f"\n\u2022 **Notes:** `{r['note'] or 'None'}`",
-                inline=False
-            )
-        embed.set_footer(text="MCPE ASIA \u2022 Tier History")
+        embed = embeds.tier_history_embed(results)
         await interaction.followup.send(embed=embed, ephemeral=True)
 
     @app_commands.command(name="setrole", description="Map a tier name to a role (auto-assigned on evaluation).")
@@ -188,19 +204,7 @@ class TierGroup(app_commands.Group):
     async def setrole(self, interaction: discord.Interaction, tier_name: str, role: discord.Role):
         await interaction.response.defer(ephemeral=True)
         database.set_tier_role(interaction.guild_id, tier_name, role.id)
-        embed = discord.Embed(
-            title="\u2705 Tier Role Mapped",
-            description=(
-                f"\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
-                f"\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
-                f"**{tier_name}** \u2192 {role.mention}\n"
-                f"\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
-                f"\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
-                f"\n\nPlayers who receive **{tier_name}** will automatically get {role.mention}."
-            ),
-            color=embeds.COLOR_GREEN
-        )
-        embed.set_footer(text="MCPE ASIA \u2022 Tier Roles")
+        embed = embeds.tier_role_embed(tier_name, role.mention)
         await interaction.followup.send(embed=embed, ephemeral=True)
 
     @app_commands.command(name="unsetrole", description="Remove a tier-to-role mapping.")
@@ -219,18 +223,5 @@ class TierGroup(app_commands.Group):
             await interaction.followup.send("\uD83D\uDCED No tier role mappings configured. Use `/tier setrole` to add some.", ephemeral=True)
             return
 
-        lines = "\n".join(f"\u2022 **{tier}** \u2192 <@{role_id}>" for tier, role_id in mapping.items())
-        embed = discord.Embed(
-            title="\uD83C\uDFC6 Tier Role Mappings",
-            description=(
-                "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
-                "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
-                f"{lines}\n"
-                "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
-                "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
-                "\n\nRoles are auto-assigned when `/tier result` is used."
-            ),
-            color=embeds.COLOR_PURPLE
-        )
-        embed.set_footer(text="MCPE ASIA \u2022 Tier Roles")
+        embed = embeds.tier_roles_list_embed(mapping)
         await interaction.followup.send(embed=embed, ephemeral=True)

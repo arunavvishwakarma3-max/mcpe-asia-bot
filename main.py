@@ -9,7 +9,6 @@ import database
 import embeds
 import views
 import tier_system
-import welcome_system
 
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -25,7 +24,6 @@ class MCPEAsiaBot(commands.Bot):
 
     async def setup_hook(self):
         self.tree.add_command(tier_system.TierGroup())
-        self.tree.add_command(welcome_system.WelcomeGroup())
 
         help_cmd = app_commands.Command(
             name="help",
@@ -34,62 +32,73 @@ class MCPEAsiaBot(commands.Bot):
         )
         self.tree.add_command(help_cmd)
 
-    async def on_ready(self):
-        database.init_db()
-        print(f"Logged in as {self.user.name} ({self.user.id})")
-
         try:
             synced = await self.tree.sync()
             print(f"Synced {len(synced)} slash commands.")
         except Exception as e:
             print(f"Failed to sync commands: {e}")
 
+    async def on_ready(self):
+        database.init_db()
+        print(f"Logged in as {self.user.name} ({self.user.id})")
+
         self.add_view(views.TierGamemodeSelect())
         print("Persistent views restored.")
 
-    async def on_member_join(self, member: discord.Member):
-        await welcome_system.send_welcome(member)
+    async def on_error(self, event_method, *args, **kwargs):
+        print(f"Error in {event_method}: {args} {kwargs}")
 
     async def on_message(self, message: discord.Message):
         if message.author.bot:
             return
         if self.user in message.mentions:
             embed = discord.Embed(
-                title="\uD83D\uDC4B Need Help?",
+                title="",
                 description=(
-                    "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
-                    "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
-                    f"Hi {message.author.mention}! Here are my commands:\n"
-                    "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
-                    "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
+                    "```ruby\n"
+                    "[ NEED HELP? ]\n"
+                    "```"
                 ),
-                color=0x9B59B6
+                color=embeds.COLOR_GOLD
+            )
+            embed.set_author(
+                name="MCPE ASIA \u2022 Commands",
+                icon_url="https://i.imgur.com/g8o468o.png"
             )
             embed.add_field(
-                name="\uD83D\uDCCC Commands",
+                name="\uD83C\uDFAA Tier System",
                 value=(
-                    "\u2022 `/tier setup` \u2014 Configure the tier system\n"
-                    "\u2022 `/tier result` \u2014 Record a tier evaluation\n"
-                    "\u2022 `/tier history` \u2014 View past results\n"
-                    "\u2022 `/tier setrole` \u2014 Map a tier to a role\n"
-                    "\u2022 `/tier roles` \u2014 View tier role mappings\n"
-                    "\u2022 `/welcome setup` \u2014 Set welcome channel\n"
-                    "\u2022 `/welcome test` \u2014 Test welcome message\n"
-                    "\u2022 `/help` \u2014 Show this menu"
+                    "`/tier setup` \u2014 Configure the tier system\n"
+                    "`/tier result` \u2014 Record a tier evaluation\n"
+                    "`/tier history` \u2014 View past results\n"
+                    "`/tier setrole` \u2014 Map a tier to a role\n"
+                    "`/tier unsetrole` \u2014 Remove a tier-role mapping\n"
+                    "`/tier roles` \u2014 View tier role mappings"
                 ),
                 inline=False
             )
+            embed.add_field(
+                name="\u2753 Other",
+                value="`/help` \u2014 Show this menu",
+                inline=False
+            )
             embed.set_footer(text="MCPE ASIA \u2022 Need anything else?")
+            embed.timestamp = discord.utils.utcnow()
             await message.channel.send(embed=embed)
 
     async def help_callback(self, interaction: discord.Interaction):
         embed = discord.Embed(
-            title="\uD83D\uDCD6 MCPE ASIA Commands",
+            title="",
             description=(
-                "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
-                "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
+                "```ruby\n"
+                "[ MCPE ASIA COMMANDS ]\n"
+                "```"
             ),
             color=embeds.COLOR_GOLD
+        )
+        embed.set_author(
+            name="MCPE ASIA \u2022 Help",
+            icon_url="https://i.imgur.com/g8o468o.png"
         )
         embed.add_field(
             name="\uD83C\uDFAA Tier System",
@@ -103,16 +112,10 @@ class MCPEAsiaBot(commands.Bot):
             ),
             inline=False
         )
-        embed.add_field(
-            name="\uD83D\uDC4B Welcome System",
-            value=(
-                "`/welcome setup` \u2014 Set welcome channel\n"
-                "`/welcome test` \u2014 Send a test welcome"
-            ),
-            inline=False
-        )
         embed.set_footer(text="MCPE ASIA \u2022 Built for MCPE")
+        embed.timestamp = discord.utils.utcnow()
         await interaction.response.send_message(embed=embed, ephemeral=True)
+
 
 class HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -124,12 +127,13 @@ class HealthHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         pass
 
+
 bot = MCPEAsiaBot()
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 10000))
     server = HTTPServer(("0.0.0.0", port), HealthHandler)
-    health_thread = threading.Thread(target=server.serve_forever)
+    health_thread = threading.Thread(target=server.serve_forever, daemon=True)
     health_thread.start()
     print(f"Health server running on port {port}")
 
@@ -141,4 +145,5 @@ if __name__ == "__main__":
     else:
         print("DISCORD_TOKEN not set. Add it in Render dashboard and redeploy.")
 
-    health_thread.join()
+    server.shutdown()
+    print("Bot exited. Process will restart on Render.")

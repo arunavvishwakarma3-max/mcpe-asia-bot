@@ -1,19 +1,9 @@
 import discord
 
-COLOR_PURPLE = 0x9B59B6
-COLOR_BLUE = 0x3498DB
-COLOR_GREEN = 0x2ECC71
 COLOR_GOLD = 0xFFD700
-COLOR_TEAL = 0x1ABC9C
-
-GAMEMODE_EMOJIS = {
-    "Skywars": "\U0001FAB0",
-    "BUHC": "\U0001F6E1\uFE0F",
-    "FUHC": "\U0001F30B",
-    "Boxing": "\U0001F44A",
-    "Midfight": "\u26A1",
-    "Bedfight": "\U0001F4A4",
-}
+COLOR_ACCENT = 0x7B2FBE
+COLOR_GREEN = 0x00FF88
+COLOR_INFO = 0x4FC3F7
 
 GAMEMODE_LABELS = {
     "Skywars": "Skywars",
@@ -26,121 +16,147 @@ GAMEMODE_LABELS = {
 
 def tier_hub_embed():
     lines = "\n".join(
-        f"{GAMEMODE_EMOJIS[gm]} \u2014 **{label}**"
-        for gm, label in GAMEMODE_LABELS.items()
+        f"\u2022 **{label}**"
+        for label in GAMEMODE_LABELS.values()
     )
     embed = discord.Embed(
-        title="\uD83C\uDFAA Tier Evaluation Portal",
+        title="\uD83C\uDFAA **TIER EVALUATION**",
         description=(
-            "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
-            "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
-            "Welcome to the official tier testing system.\n"
-            "Select a gamemode below to begin your evaluation.\n"
-            "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
-            "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
+            f"Click a button below to request a tier test.\n"
+            f"You'll be asked for your **IGN** & **available time**."
         ),
-        color=COLOR_PURPLE
+        color=COLOR_GOLD
     )
     embed.set_thumbnail(url="https://i.imgur.com/g8o468o.png")
     embed.add_field(
-        name="\uD83C\uDFAE Available Gamemodes",
-        value=f"\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
-               f"\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
-               f"{lines}\n"
-               f"\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
-               f"\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501",
-        inline=False
+        name="\uD83C\uDFAE Gamemodes",
+        value=lines,
+        inline=True
     )
     embed.add_field(
-        name="\uD83D\uDCDD Guidelines",
+        name="\uD83D\uDCDD Rules",
         value=(
-            "\u2022 A stable internet connection is required.\n"
-            "\u2022 Tier decisions are final and binding.\n"
-            "\u2022 Respect staff and testers at all times.\n"
-            "\u2022 Do not create multiple tickets."
+            f"\u2022 Stable internet required\n"
+            f"\u2022 Tier decisions are final\n"
+            f"\u2022 Respect staff"
         ),
-        inline=False
+        inline=True
     )
-    embed.set_footer(text="MCPE ASIA \u2022 Tier System")
+    embed.set_footer(text="MCPE ASIA \u2022 Click to begin")
     return embed
 
-def tier_ticket_embed(user_id: int, gamemode: str):
-    emoji = GAMEMODE_EMOJIS.get(gamemode, "\uD83C\uDFAE")
+def tier_ticket_embed(user_id: int, gamemode: str, ign: str, time: str):
     embed = discord.Embed(
-        title="\uD83C\uDF9F\uFE0F New Tier Ticket",
+        title="\uD83C\uDF9F\uFE0F **TIER TICKET**",
         description=(
-            "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
-            "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
-            f"A player has requested a **{gamemode}** evaluation.\n"
-            "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
-            "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
+            f"<@{user_id}> requested a **{gamemode}** evaluation.\n"
+            f"Status: \u23F3 **Pending**"
         ),
-        color=COLOR_BLUE
+        color=COLOR_ACCENT
     )
     embed.set_thumbnail(url="https://i.imgur.com/g8o468o.png")
-    embed.add_field(name="Player", value=f"<@{user_id}>", inline=True)
-    embed.add_field(name="Gamemode", value=f"{emoji} {gamemode}", inline=True)
-    embed.add_field(name="Status", value="```css\n[ Pending ]\n```", inline=True)
+    embed.add_field(name="\uD83D\uDCDD IGN", value=f"**{ign}**", inline=True)
+    embed.add_field(name="\uD83D\uDD52 Time", value=f"**{time}**", inline=True)
     embed.add_field(
-        name="Actions",
+        name="\u2699\uFE0F",
         value=(
-            "\u2022 **Staff** \u2014 Click `\u270B Claim` to handle this request\n"
-            "\u2022 **Tester** \u2014 Use `/tier result` after evaluation\n"
-            "\u2022 **Player** \u2014 Please wait for a staff member"
+            f"\u270B **Claim** \u2014 handle the request\n"
+            f"\uD83D\uDCDD **Result** \u2014 submit evaluation\n"
+            f"\uD83D\uDD12 **Close** \u2014 delete ticket"
         ),
         inline=False
     )
-    embed.set_footer(text="MCPE ASIA \u2022 Tier Tickets")
+    embed.set_footer(text=f"MCPE ASIA \u2022 {gamemode}")
+    return embed
+
+def tier_claim_embed(user_id: int, gamemode: str, ign: str, time: str, claimed_by: int):
+    embed = discord.Embed(
+        title="\u270B **TICKET CLAIMED**",
+        description=(
+            f"<@{claimed_by}> is handling **{gamemode}** for <@{user_id}>."
+        ),
+        color=COLOR_GOLD
+    )
+    embed.set_thumbnail(url="https://i.imgur.com/g8o468o.png")
+    embed.add_field(name="\uD83D\uDCDD IGN", value=f"**{ign}**", inline=True)
+    embed.add_field(name="\uD83D\uDD52 Time", value=f"**{time}**", inline=True)
+    embed.set_footer(text="MCPE ASIA \u2022 Evaluation In Progress")
     return embed
 
 def tier_result_embed(result: dict):
     embed = discord.Embed(
-        title="\u2705 Tier Test Complete",
+        title="\u2705 **TIER COMPLETE**",
         description=(
-            "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
-            "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
-            f"**{result['ign']}** has been officially tiered.\n"
-            "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
-            "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
+            f"**{result['ign']}** evaluated by <@{result['tester_id']}>."
         ),
         color=COLOR_GREEN
     )
     embed.set_thumbnail(url="https://i.imgur.com/g8o468o.png")
-    embed.add_field(name="Player", value=f"<@{result['user_id']}>", inline=True)
-    embed.add_field(name="IGN", value=f"`{result['ign']}`", inline=True)
-    embed.add_field(name="Previous Tier", value=f"```\n{result['previous_tier']}\n```", inline=True)
-    embed.add_field(name="New Tier", value=f"```diff\n+ {result['new_tier']}\n```", inline=True)
-    embed.add_field(name="Notes", value=f"```{result['note'] or 'None'}```", inline=False)
-    embed.add_field(name="Evaluated By", value=f"<@{result['tester_id']}>", inline=True)
-    embed.set_footer(text="MCPE ASIA \u2022 Tier Results")
+    embed.add_field(name="\uD83D\uDC64 Player", value=f"<@{result['user_id']}>", inline=True)
+    embed.add_field(name="\u2B07 Previous", value=f"**{result['previous_tier']}**", inline=True)
+    embed.add_field(name="\u2B06 New Tier", value=f"**{result['new_tier']}**", inline=True)
+    embed.add_field(name="\uD83D\uDCDD Notes", value=result['note'] or "None", inline=False)
+    embed.set_footer(text="MCPE ASIA \u2022 Results")
     return embed
 
-def welcome_embed(member: discord.Member, member_count: int):
+def tier_history_embed(results: list):
     embed = discord.Embed(
-        title="\uD83D\uDC4B Welcome to the Server!",
-        description=(
-            "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
-            "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
-            f"Welcome to **{member.guild.name}**, {member.mention}!\n"
-            "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
-            "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
-        ),
-        color=COLOR_TEAL
+        title="\uD83D\uDCDC **TIER HISTORY**",
+        color=COLOR_INFO
     )
-    embed.set_image(url=member.display_avatar.url)
-    embed.add_field(
-        name="\uD83D\uDCD6 Getting Started",
-        value=(
-            "\u2022 Read the server rules\n"
-            "\u2022 Visit `/tier` to get ranked\n"
-            "\u2022 Enjoy your stay!"
-        ),
-        inline=False
+    embed.set_thumbnail(url="https://i.imgur.com/g8o468o.png")
+    for r in results:
+        embed.add_field(
+            name=f"**{r['ign']}** {r['previous_tier']} \u2192 {r['new_tier']}",
+            value=f"<@{r['user_id']}> \u2022 by <@{r['tester_id']}>",
+            inline=False
+        )
+    embed.set_footer(text="MCPE ASIA \u2022 Recent results")
+    return embed
+
+def tier_role_embed(tier_name: str, role_name: str):
+    embed = discord.Embed(
+        title="\uD83C\uDFC6 **ROLE MAPPED**",
+        description=f"**{tier_name}** \u2192 {role_name}",
+        color=COLOR_GREEN
     )
-    embed.add_field(
-        name="\uD83D\uDCC5 Member Information",
-        value=f"\u2022 **User:** {member.mention}\n\u2022 **Joined:** <t:{int(member.joined_at.timestamp())}:R>\n\u2022 **Member #:** `{member_count}`",
-        inline=False
+    embed.set_thumbnail(url="https://i.imgur.com/g8o468o.png")
+    return embed
+
+def tier_roles_list_embed(mapping: dict):
+    lines = "\n".join(f"\u2022 **{t}** \u2192 <@&{r}>" for t, r in mapping.items())
+    embed = discord.Embed(
+        title="\uD83C\uDFC6 **ROLE MAPPINGS**",
+        description=lines,
+        color=COLOR_GOLD
     )
-    embed.set_footer(text=f"MCPE ASIA \u2022 Member #{member_count}")
+    embed.set_thumbnail(url="https://i.imgur.com/g8o468o.png")
+    return embed
+
+def tiersetup_success_embed(tier_channel, results_channel, ticket_category, staff_role, tester_role):
+    text = (
+        f"\uD83D\uDCCD {tier_channel.mention} - Lobby\n"
+        f"\uD83D\uDCCD {results_channel.mention} - Results\n"
+        f"\uD83D\uDCCD {ticket_category.mention} - Tickets\n"
+        f"\uD83D\uDC64 {staff_role.mention} - Staff\n"
+    )
+    if tester_role:
+        text += f"\uD83D\uDC64 {tester_role.mention} - Testers"
+    embed = discord.Embed(
+        title="\u2705 **SYSTEM READY**",
+        description=text,
+        color=COLOR_GREEN
+    )
+    embed.set_thumbnail(url="https://i.imgur.com/g8o468o.png")
+    embed.set_footer(text="MCPE ASIA \u2022 Tier System Active")
+    return embed
+
+def tier_remove_embed():
+    embed = discord.Embed(
+        title="\uD83D\uDDD1\uFE0F **SYSTEM REMOVED**",
+        description="The tier hub panel has been deleted. You can re-run `/tier setup` anytime.",
+        color=COLOR_INFO
+    )
+    embed.set_thumbnail(url="https://i.imgur.com/g8o468o.png")
+    embed.set_footer(text="MCPE ASIA \u2022 Tier System Removed")
     return embed
