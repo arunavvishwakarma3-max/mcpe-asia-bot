@@ -47,14 +47,6 @@ class TierInfoModal(discord.ui.Modal, title="Tier Evaluation Details"):
             interaction.guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True, manage_channels=True),
             interaction.user: discord.PermissionOverwrite(read_messages=True, send_messages=True)
         }
-        if cfg.get('tier_tester_role_id'):
-            tester_role = interaction.guild.get_role(cfg['tier_tester_role_id'])
-            if tester_role:
-                overwrites[tester_role] = discord.PermissionOverwrite(read_messages=True, send_messages=True)
-        if cfg.get('tier_staff_role_id'):
-            staff_role = interaction.guild.get_role(cfg['tier_staff_role_id'])
-            if staff_role:
-                overwrites[staff_role] = discord.PermissionOverwrite(read_messages=True, send_messages=True)
 
         clean_name = f"tier-{interaction.user.name}-{self.gamemode.lower()}"
         clean_name = "".join(c if (c.isalnum() or c == "-") else "" for c in clean_name).lower()
