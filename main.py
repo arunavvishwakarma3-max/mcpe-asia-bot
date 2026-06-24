@@ -1,5 +1,7 @@
 import os
 import threading
+import time
+import urllib.request
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import discord
 from discord.ext import commands
@@ -139,6 +141,19 @@ class HealthHandler(BaseHTTPRequestHandler):
         pass
 
 
+def self_ping():
+    app_url = os.getenv("RENDER_EXTERNAL_URL", "").strip()
+    if not app_url:
+        print("Not on Render — skipping self-ping.")
+        return
+    while True:
+        time.sleep(300)
+        try:
+            urllib.request.urlopen(app_url, timeout=10)
+            print("[Self-ping] OK")
+        except Exception as e:
+            print(f"[Self-ping] Failed: {e}")
+
 bot = MCPEAsiaBot()
 
 if __name__ == "__main__":
@@ -147,6 +162,9 @@ if __name__ == "__main__":
     health_thread = threading.Thread(target=server.serve_forever, daemon=True)
     health_thread.start()
     print(f"Health server running on port {port}")
+
+    ping_thread = threading.Thread(target=self_ping, daemon=True)
+    ping_thread.start()
 
     if TOKEN and TOKEN != "your_discord_token_here":
         try:
