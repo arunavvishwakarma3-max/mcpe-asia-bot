@@ -43,62 +43,67 @@ class TierGroup(app_commands.Group):
     ):
         await interaction.response.defer(ephemeral=True)
 
-        bot_member = interaction.guild.me
-        if not bot_member.guild_permissions.manage_channels:
-            await interaction.followup.send(
-                "\u274C The bot needs **Manage Channels** permission in the server to create ticket channels. "
-                "Give it that permission and try again.",
-                ephemeral=True
+        try:
+            bot_member = interaction.guild.me
+            if not bot_member.guild_permissions.manage_channels:
+                await interaction.followup.send(
+                    "\u274C The bot needs **Manage Channels** permission in the server to create ticket channels. "
+                    "Give it that permission and try again.",
+                    ephemeral=True
+                )
+                return
+            if not ticket_category.permissions_for(bot_member).manage_channels:
+                await interaction.followup.send(
+                    "\u274C The bot needs **Manage Channels** permission in the selected category. "
+                    "Check the category permissions and try again.",
+                    ephemeral=True
+                )
+                return
+
+            data = {
+                "tier_channel_id": tier_channel.id,
+                "tier_results_channel_id": results_channel.id,
+                "ticket_category_id": ticket_category.id,
+                "tier_staff_role_id": staff_role.id,
+            }
+            if tester_role:
+                data["tier_tester_role_id"] = tester_role.id
+
+            cfg = database.get_guild_config(interaction.guild_id)
+            old_channel_id = cfg.get('tier_channel_id') if cfg else None
+            old_msg_id = cfg.get('tier_message_id') if cfg else None
+            if old_channel_id and old_msg_id:
+                old_channel = interaction.guild.get_channel(old_channel_id)
+                if old_channel:
+                    try:
+                        old_msg = await old_channel.fetch_message(old_msg_id)
+                        await old_msg.delete()
+                    except:
+                        pass
+
+            embed = embeds.tier_hub_embed()
+            view = views.TierGamemodeSelect()
+            msg = await tier_channel.send(embed=embed, view=view)
+            bot_ref = interaction.client
+            if hasattr(bot_ref, 'add_view') and callable(bot_ref.add_view):
+                bot_ref.add_view(view, message_id=msg.id)
+
+            data["tier_message_id"] = msg.id
+            database.save_guild_config(interaction.guild_id, data)
+
+            success = embeds.tiersetup_success_embed(
+                tier_channel, results_channel, ticket_category, staff_role, tester_role
             )
-            return
-        if not ticket_category.permissions_for(bot_member).manage_channels:
-            await interaction.followup.send(
-                "\u274C The bot needs **Manage Channels** permission in the selected category. "
-                "Check the category permissions and try again.",
-                ephemeral=True
-            )
-            return
-
-        data = {
-            "tier_channel_id": tier_channel.id,
-            "tier_results_channel_id": results_channel.id,
-            "ticket_category_id": ticket_category.id,
-            "tier_staff_role_id": staff_role.id,
-        }
-        if tester_role:
-            data["tier_tester_role_id"] = tester_role.id
-
-        cfg = database.get_guild_config(interaction.guild_id)
-        old_channel_id = cfg.get('tier_channel_id') if cfg else None
-        old_msg_id = cfg.get('tier_message_id') if cfg else None
-        if old_channel_id and old_msg_id:
-            old_channel = interaction.guild.get_channel(old_channel_id)
-            if old_channel:
-                try:
-                    old_msg = await old_channel.fetch_message(old_msg_id)
-                    await old_msg.delete()
-                except:
-                    pass
-
-        embed = embeds.tier_hub_embed()
-        view = views.TierGamemodeSelect()
-        msg = await tier_channel.send(embed=embed, view=view)
-        bot_ref = interaction.client
-        if hasattr(bot_ref, 'add_view') and callable(bot_ref.add_view):
-            bot_ref.add_view(view, message_id=msg.id)
-
-        data["tier_message_id"] = msg.id
-        database.save_guild_config(interaction.guild_id, data)
-
-        success = embeds.tiersetup_success_embed(
-            tier_channel, results_channel, ticket_category, staff_role, tester_role
-        )
-        await interaction.followup.send(embed=success, ephemeral=True)
+            await interaction.followup.send(embed=success, ephemeral=True)
+        except Exception as e:
+            await interaction.followup.send(f"\u274C Setup failed: {e}", ephemeral=True)
 
     @setup.error
     async def setup_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         if isinstance(error, app_commands.CheckFailure):
             await interaction.response.send_message("\u274C You need Manage Server permission to use this command.", ephemeral=True)
+        else:
+            await interaction.response.send_message(f"\u274C Setup error: {error}", ephemeral=True)
 
     @app_commands.command(name="remove", description="Delete the tier hub panel from its channel.")
     @app_commands.checks.has_permissions(manage_guild=True)
